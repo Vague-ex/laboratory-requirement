@@ -1,0 +1,4 @@
+Item ID,Description,Unit Price,Quantity,Extended Value,Category,Supplier,Audit Date
+INV008,Server Rack,1250.0,8,10000.0,Electronics,EnterpriseTech,2025-09-25
+INV004,Desk,450.0,15,6750.0,Furniture,OfficeSupplies Inc,2025-09-25
+INV003,Printer,299.99,30,8999.7,Electronics,TechCorp,2025-09-25
