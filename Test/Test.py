@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 
 
-MONGO_URI = "mongodb+srv://Aguilar:Aguilar1@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+MONGO_URI = "mongodb+srv://Aguilar:Aguilar21@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
 DB_NAME = 'inventoryaudit'
 COLLECTION_NAME = 'CPU'
 
