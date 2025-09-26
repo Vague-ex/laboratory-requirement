@@ -1,3 +1,5 @@
 Auditing Inventory for Laboratory as an requirement activity
 
-Pyinstaller, local app. testing how releases work in github lol
+Currently can only connect to my own DB
+
+Can Only Price Test Audit
