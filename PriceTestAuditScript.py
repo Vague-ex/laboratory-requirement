@@ -96,6 +96,24 @@ def export_audit_results(sampled_items, filename="audit_results.csv"):
     print(f"Results exported to {filename}")
     return df
 
+def find_low_stock_items(stock_threshold=10):
+    """Find items with quantity below the given threshold"""
+    low_stock_items = list(collection.find(
+        {'quantity': {'$lt': stock_threshold}},
+        {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1, 'extendedValue': 1, 'category': 1, 'supplier': 1}
+    ))
+    print(f"Items with quantity below {stock_threshold}: {len(low_stock_items)}")
+    return low_stock_items
+
+def find_high_unit_price_items(unit_price_threshold=1000):
+    """Find items with unit price above the given threshold"""
+    high_price_items = list(collection.find(
+        {'unitPrice': {'$gt': unit_price_threshold}},
+        {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1, 'extendedValue': 1, 'category': 1, 'supplier': 1}
+    ))
+    print(f"Items with unit price above {unit_price_threshold}: {len(high_price_items)}")
+    return high_price_items
+
 if __name__ == "__main__":
     SAMPLE_SIZE = 3
     THRESHOLD_VALUE = 5000
