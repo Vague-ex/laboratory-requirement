@@ -1,16 +1,23 @@
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 import pandas as pd
 import random
 from datetime import datetime
 
 
-MONGO_URI = "mongodb+srv://Aguilar:Aguilar1@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&appName=PROFE3"
+MONGO_URI = "mongodb+srv://Aguilar:Aguilar1@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
 DB_NAME = 'inventoryaudit'
 COLLECTION_NAME = 'CPU'
 
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
-collection = db[COLLECTION_NAME]
+try:
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=20000)
+    db = client[DB_NAME]
+    collection = db[COLLECTION_NAME]
+    # Test connection
+    client.admin.command('ping')
+except ServerSelectionTimeoutError as err:
+    print("Could not connect to MongoDB:", err)
+    exit(1)
 
 def import_from_csv(csv_file_path):
     """Import inventory data from CSV file"""
