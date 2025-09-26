@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from pymongo.errors import ServerSelectionTimeoutError
 import pandas as pd
 import random
@@ -43,15 +43,13 @@ def calculate_extended_values():
     for item in items:
         extended_value = item.get('unitPrice', 0) * item.get('quantity', 0)
         bulk_ops.append(
-            {
-                'update_one': {
-                    'filter': {'_id': item['_id']},
-                    'update': {'$set': {'extendedValue': extended_value}}
-                }
-            }
+            UpdateOne(
+                {'_id': item['_id']},
+                {'$set': {'extendedValue': extended_value}}
+            )
         )
     if bulk_ops:
-        collection.bulk_write([op['update_one'] for op in bulk_ops])
+        collection.bulk_write(bulk_ops)
     print("Extended values calculated for all items")
 
 def perform_price_testing_audit(sample_size=3, threshold_value=5000):
