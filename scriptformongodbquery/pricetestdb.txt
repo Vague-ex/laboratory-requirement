@@ -1,0 +1,20 @@
+// MongoDB aggregation pipeline for random price testing
+db.products.aggregate([
+  {
+    $match: {
+      price: { $gte: 5000 } // Filter items meeting the price threshold
+    }
+  },
+  {
+    $sample: { size: 5 } // Randomly select 5 items
+  },
+  {
+    $project: {
+      _id: 1,
+      name: 1,
+      price: 1,
+      sku: 1,
+      category: 1
+    }
+  }
+])

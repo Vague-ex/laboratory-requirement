@@ -19,7 +19,11 @@ except ServerSelectionTimeoutError as err:
     print("Could not connect to MongoDB:", err)
     exit(1)
 
-def import_from_csv(csv_file_path):
+def get_collection_names():
+    """Return all collection names in the database"""
+    return db.list_collection_names()
+
+def import_from_csv(csv_file_path, collection):
     """Import inventory data from CSV file"""
     df = pd.read_csv(csv_file_path)
     data = df.to_dict('records')
@@ -27,7 +31,7 @@ def import_from_csv(csv_file_path):
     print(f"Imported {len(result.inserted_ids)} items from CSV")
     return result.inserted_ids
 
-def verify_data(limit=5):
+def verify_data(collection, limit=5):
     """Verify that data was imported correctly"""
     total_count = collection.count_documents({})
     print(f"Total items in database: {total_count}")
@@ -36,7 +40,7 @@ def verify_data(limit=5):
         print(f"- {item.get('itemId', 'N/A')}: {item.get('description', 'N/A')} - ${item.get('unitPrice', 0)} x {item.get('quantity', 0)}")
     return total_count
 
-def calculate_extended_values():
+def calculate_extended_values(collection):
     """Calculate and update extended values for all items"""
     items = collection.find({}, {'_id': 1, 'unitPrice': 1, 'quantity': 1})
     bulk_ops = []
@@ -52,9 +56,9 @@ def calculate_extended_values():
         collection.bulk_write(bulk_ops)
     print("Extended values calculated for all items")
 
-def perform_price_testing_audit(sample_size=3, threshold_value=5000):
+def perform_price_testing_audit(collection, sample_size=3, threshold_value=5000):
     """Main function to perform price testing audit"""
-    calculate_extended_values()
+    calculate_extended_values(collection)
     high_value_items = list(collection.find(
         {'extendedValue': {'$gt': threshold_value}},
         {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1, 'extendedValue': 1, 'category': 1, 'supplier': 1}
@@ -96,7 +100,7 @@ def export_audit_results(sampled_items, filename="audit_results.csv"):
     print(f"Results exported to {filename}")
     return df
 
-def find_low_stock_items(stock_threshold=10):
+def find_low_stock_items(collection, stock_threshold=10):
     """Find items with quantity below the given threshold"""
     low_stock_items = list(collection.find(
         {'quantity': {'$lt': stock_threshold}},
@@ -105,7 +109,7 @@ def find_low_stock_items(stock_threshold=10):
     print(f"Items with quantity below {stock_threshold}: {len(low_stock_items)}")
     return low_stock_items
 
-def find_high_unit_price_items(unit_price_threshold=1000):
+def find_high_unit_price_items(collection, unit_price_threshold=1000):
     """Find items with unit price above the given threshold"""
     high_price_items = list(collection.find(
         {'unitPrice': {'$gt': unit_price_threshold}},
@@ -114,12 +118,35 @@ def find_high_unit_price_items(unit_price_threshold=1000):
     print(f"Items with unit price above {unit_price_threshold}: {len(high_price_items)}")
     return high_price_items
 
+def audit_all_collections(audit_type="Price Testing", sample_size=3, threshold_value=5000):
+    """Audit all collections in the database"""
+    results = {}
+    for col_name in get_collection_names():
+        collection = db[col_name]
+        if audit_type == "Price Testing":
+            items = perform_price_testing_audit(collection, sample_size, threshold_value)
+        elif audit_type == "Low Stock":
+            items = find_low_stock_items(collection, stock_threshold=int(threshold_value))
+        elif audit_type == "High Unit Price":
+            items = find_high_unit_price_items(collection, unit_price_threshold=threshold_value)
+        else:
+            items = []
+        results[col_name] = items
+    return results
+
 if __name__ == "__main__":
     SAMPLE_SIZE = 3
     THRESHOLD_VALUE = 5000
     print("=== MONGODB INVENTORY PRICE TESTING AUDIT ===")
-    verify_data()
-    sampled_items = perform_price_testing_audit(SAMPLE_SIZE, THRESHOLD_VALUE)
-    export_audit_results(sampled_items)
+    # For single collection (legacy)
+    # verify_data(db[COLLECTION_NAME])
+    # sampled_items = perform_price_testing_audit(db[COLLECTION_NAME], SAMPLE_SIZE, THRESHOLD_VALUE)
+    # export_audit_results(sampled_items)
+    # For all collections
+    all_results = audit_all_collections("Price Testing", SAMPLE_SIZE, THRESHOLD_VALUE)
+    for col, items in all_results.items():
+        print(f"\nCollection: {col} - Sampled {len(items)} items")
+        export_audit_results(items, filename=f"audit_results_{col}.csv")
     print("\n=== AUDIT COMPLETE ===")
-    print(f"Successfully sampled {len(sampled_items)} items for price testing")
+    total_sampled = sum(len(items) for items in all_results.values())
+    print(f"Successfully sampled {total_sampled} items for price testing")
