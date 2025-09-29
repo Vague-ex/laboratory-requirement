@@ -7,7 +7,7 @@ from datetime import datetime
 
 MONGO_URI = "mongodb+srv://Aguilar:Aguilar21@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
 DB_NAME = 'inventoryaudit'
-COLLECTION_NAME = 'CPU'
+COLLECTION_NAME = 'Storage Devices'
 
 try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=20000)
@@ -135,18 +135,62 @@ def audit_all_collections(audit_type="Price Testing", sample_size=3, threshold_v
     return results
 
 if __name__ == "__main__":
-    SAMPLE_SIZE = 3
-    THRESHOLD_VALUE = 5000
     print("=== MONGODB INVENTORY PRICE TESTING AUDIT ===")
-    # For single collection (legacy)
-    # verify_data(db[COLLECTION_NAME])
-    # sampled_items = perform_price_testing_audit(db[COLLECTION_NAME], SAMPLE_SIZE, THRESHOLD_VALUE)
-    # export_audit_results(sampled_items)
-    # For all collections
-    all_results = audit_all_collections("Price Testing", SAMPLE_SIZE, THRESHOLD_VALUE)
-    for col, items in all_results.items():
-        print(f"\nCollection: {col} - Sampled {len(items)} items")
-        export_audit_results(items, filename=f"audit_results_{col}.csv")
-    print("\n=== AUDIT COMPLETE ===")
-    total_sampled = sum(len(items) for items in all_results.values())
-    print(f"Successfully sampled {total_sampled} items for price testing")
+    available_collections = db.list_collection_names()
+    if not available_collections:
+        print("No collections found in the database.")
+        exit()
+    
+    print("\nAvailable collections:")
+    for i, collection_name in enumerate(available_collections, 1):
+        print(f"{i}. {collection_name}")
+    
+    
+    while True:
+        try:
+            collection_choice = int(input(f"\nSelect collection (1-{len(available_collections)}): "))
+            if 1 <= collection_choice <= len(available_collections):
+                selected_collection = available_collections[collection_choice - 1]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(available_collections)}")
+        except ValueError:
+            print("Please enter a valid number")
+    
+    
+    while True:
+        try:
+            sample_size = int(input("\nEnter sample size: "))
+            if sample_size > 0:
+                break
+            else:
+                print("Sample size must be greater than 0")
+        except ValueError:
+            print("Please enter a valid number")
+    
+    while True:
+        try:
+            threshold_value = float(input("Enter threshold value: "))
+            if threshold_value >= 0:
+                break
+            else:
+                print("Threshold value must be non-negative")
+        except ValueError:
+            print("Please enter a valid number")
+    
+    print(f"\nSelected collection: {selected_collection}")
+    print(f"Sample size: {sample_size}")
+    print(f"Threshold value: {threshold_value}")
+    
+    
+    verify_data(db[selected_collection])
+    sampled_items = perform_price_testing_audit(db[selected_collection], sample_size, threshold_value)
+    
+    exportconfirm = input(str(print("Would you like to export the results? (Y/N): ")))
+    if exportconfirm == "Y":
+        export_audit_results(sampled_items)
+    else:
+        print("\n=== AUDIT COMPLETE ===")
+        print(f"Successfully sampled {len(sampled_items)} items for price testing")
+    
+    

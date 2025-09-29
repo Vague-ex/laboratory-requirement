@@ -59,7 +59,7 @@ class CollectionSelectorDialog(QDialog):
 class AuditApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Inventory Audit Dashboard")
+        self.setWindowTitle("Inventory Dashboard")
         self.setMinimumSize(1000, 600)
         self.selected_collections = get_collection_names()  # Default: all
         self.init_ui()
@@ -68,7 +68,7 @@ class AuditApp(QWidget):
         layout = QVBoxLayout()
 
         # Title
-        title = QLabel("Inventory Audit Dashboard")
+        title = QLabel("Inventory Dashboard")
         title.setStyleSheet("font-size: 28px; color: #0d6efd; font-weight: bold; margin-bottom: 20px;")
         layout.addWidget(title)
 
