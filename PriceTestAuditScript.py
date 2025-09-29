@@ -56,7 +56,7 @@ def calculate_extended_values(collection):
         collection.bulk_write(bulk_ops)
     print("Extended values calculated for all items")
 
-def perform_price_testing_audit(collection, sample_size=3, threshold_value=5000):
+def perform_price_testing_audit(collection, sample_size, threshold_value):
     """Main function to perform price testing audit"""
     calculate_extended_values(collection)
     high_value_items = list(collection.find(
@@ -100,7 +100,7 @@ def export_audit_results(sampled_items, filename="audit_results.csv"):
     print(f"Results exported to {filename}")
     return df
 
-def find_low_stock_items(collection, stock_threshold=10):
+# def find_low_stock_items(collection, stock_threshold=10):
     """Find items with quantity below the given threshold"""
     low_stock_items = list(collection.find(
         {'quantity': {'$lt': stock_threshold}},
@@ -109,7 +109,7 @@ def find_low_stock_items(collection, stock_threshold=10):
     print(f"Items with quantity below {stock_threshold}: {len(low_stock_items)}")
     return low_stock_items
 
-def find_high_unit_price_items(collection, unit_price_threshold=1000):
+# def find_high_unit_price_items(collection, unit_price_threshold=1000):
     """Find items with unit price above the given threshold"""
     high_price_items = list(collection.find(
         {'unitPrice': {'$gt': unit_price_threshold}},
@@ -118,7 +118,7 @@ def find_high_unit_price_items(collection, unit_price_threshold=1000):
     print(f"Items with unit price above {unit_price_threshold}: {len(high_price_items)}")
     return high_price_items
 
-def audit_all_collections(audit_type="Price Testing", sample_size=3, threshold_value=5000):
+# def audit_all_collections(audit_type="Price Testing", sample_size=3, threshold_value=5000):
     """Audit all collections in the database"""
     results = {}
     for col_name in get_collection_names():
@@ -181,7 +181,6 @@ if __name__ == "__main__":
     print(f"\nSelected collection: {selected_collection}")
     print(f"Sample size: {sample_size}")
     print(f"Threshold value: {threshold_value}")
-    
     
     verify_data(db[selected_collection])
     sampled_items = perform_price_testing_audit(db[selected_collection], sample_size, threshold_value)
