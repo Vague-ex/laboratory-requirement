@@ -4,12 +4,11 @@ import pandas as pd
 import random
 from datetime import datetime
 
-# Configuration
+
 MONGO_URI = "mongodb+srv://Aguilar:Aguilar21@profe3.pdrabfb.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
 DB_NAME = 'inventoryaudit'
 
 def connect_to_mongodb():
-    """Establish connection to MongoDB"""
     try:
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=20000)
         db = client[DB_NAME]
@@ -20,19 +19,24 @@ def connect_to_mongodb():
         print("Could not connect to MongoDB:", err)
         exit(1)
 
-def verify_data(collection, limit=5):
-    """Verify that data exists in the collection"""
+def cleanup_extended_values(collection):
+    collection.update_many(
+        {}, 
+        {'$unset': {'extendedValue': ''}}
+    )
+    print("Extended values cleaned up from database")
+
+def verify_data(collection):
     total_count = collection.count_documents({})
     print(f"Total items in database: {total_count}")
     
     print("\nSample items:")
-    for item in collection.find({}, {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1}).limit(limit):
+    for item in collection.find({}, {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1})():
         print(f"- {item.get('itemId', 'N/A')}: {item.get('description', 'N/A')} - ${item.get('unitPrice', 0)} x {item.get('quantity', 0)}")
     
     return total_count
 
 def calculate_extended_values(collection):
-    """Calculate and update extended values for all items"""
     items = collection.find({}, {'_id': 1, 'unitPrice': 1, 'quantity': 1})
     bulk_ops = []
     
@@ -50,10 +54,8 @@ def calculate_extended_values(collection):
         print("Extended values calculated for all items")
 
 def perform_price_testing_audit(collection, sample_size, threshold_value):
-    """Main function to perform price testing audit"""
     calculate_extended_values(collection)
     
-    # Find high-value items
     high_value_items = list(collection.find(
         {'extendedValue': {'$gt': threshold_value}},
         {'itemId': 1, 'description': 1, 'unitPrice': 1, 'quantity': 1, 'extendedValue': 1, 'category': 1, 'supplier': 1}
@@ -61,13 +63,13 @@ def perform_price_testing_audit(collection, sample_size, threshold_value):
     
     print(f"Items exceeding ${threshold_value}: {len(high_value_items)}")
     
-    # Sample items
+    
     if len(high_value_items) <= sample_size:
         sampled_items = high_value_items
     else:
         sampled_items = random.sample(high_value_items, sample_size)
     
-    # Display results
+    
     print(f"\n=== SELECTED SAMPLE FOR PRICE TESTING ===")
     print(f"Sample Size: {sample_size}")
     print(f"Threshold: ${threshold_value}")
@@ -87,7 +89,6 @@ def perform_price_testing_audit(collection, sample_size, threshold_value):
     return sampled_items
 
 def export_audit_results(sampled_items, filename="audit_results.csv"):
-    """Export audit results to CSV"""
     export_data = []
     for item in sampled_items:
         export_data.append({
@@ -107,7 +108,6 @@ def export_audit_results(sampled_items, filename="audit_results.csv"):
     return df
 
 def get_user_input(prompt, input_type=float, validation=None):
-    """Helper function to get validated user input"""
     while True:
         try:
             user_input = input_type(input(prompt))
@@ -119,24 +119,16 @@ def get_user_input(prompt, input_type=float, validation=None):
             print("Please enter a valid number")
 
 def main():
-    """Main function to run the price testing audit"""
     print("=== MONGODB INVENTORY PRICE TESTING AUDIT ===")
-    
-    # Connect to database
     db = connect_to_mongodb()
-    
-    # Get available collections
     available_collections = db.list_collection_names()
     if not available_collections:
         print("No collections found in the database.")
         return
-    
-    # Display collections and get user selection
     print("\nAvailable collections:")
     for i, collection_name in enumerate(available_collections, 1):
         print(f"{i}. {collection_name}")
     
-    # Get collection choice
     collection_choice = get_user_input(
         f"\nSelect collection (1-{len(available_collections)}): ",
         input_type=int,
@@ -144,35 +136,23 @@ def main():
     )
     selected_collection = available_collections[collection_choice - 1]
     
-    # Get audit parameters
-    sample_size = get_user_input(
-        "\nEnter sample size: ",
-        input_type=int,
-        validation=lambda x: x > 0
-    )
-    
-    threshold_value = get_user_input(
-        "Enter threshold value: ",
-        input_type=float,
-        validation=lambda x: x >= 0
-    )
-    
+    sample_size = get_user_input("\nEnter sample size: ", input_type=int,validation=lambda x: x > 0)
+    threshold_value = get_user_input("Enter threshold value: ", input_type=float, validation=lambda x: x >= 0)
     print(f"\nSelected collection: {selected_collection}")
     print(f"Sample size: {sample_size}")
     print(f"Threshold value: ${threshold_value}")
     
-    # Perform audit
     collection_obj = db[selected_collection]
     verify_data(collection_obj)
     sampled_items = perform_price_testing_audit(collection_obj, sample_size, threshold_value)
     
-    # Export results
     export_confirm = input("\nWould you like to export the results? (Y/N): ").upper()
     if export_confirm == "Y":
         export_audit_results(sampled_items)
-    
+        #cleanup_extended_values(collection_obj)
+        
     print("\n=== AUDIT COMPLETE ===")
     print(f"\n\nSuccessfully sampled {len(sampled_items)} items for price testing")
-
+    
 if __name__ == "__main__":
     main()
