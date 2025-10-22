@@ -24,7 +24,7 @@ python script for auditing inventory data stored in MongoDB. Identifies high-val
 
 3. **Run the Script**
    ```bash
-   python PriceTestAuditScript.py 
+   python Auditscriptnew.py 
    ```
 
 4. **Selections when runnning script**
