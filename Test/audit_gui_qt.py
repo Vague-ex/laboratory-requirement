@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QTimer
-from PriceTestAuditScript import (
+from Test.PriceTestAuditScript import (
     perform_price_testing_audit,
     export_audit_results,
     find_low_stock_items,
@@ -15,7 +15,7 @@ from PriceTestAuditScript import (
     audit_all_collections,
     db
 )
-from OtherAuditScripts import (
+from Test.OtherAuditScripts import (
     merge_and_list_increased_items,
     list_excess_inventory_and_obsolete,
     scan_tag_sequence

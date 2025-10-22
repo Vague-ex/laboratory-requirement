@@ -1,20 +1,17 @@
-// MongoDB aggregation pipeline for random price testing
-db.products.aggregate([
-  {
-    $match: {
-      price: { $gte: 5000 } // Filter items meeting the price threshold
-    }
-  },
-  {
-    $sample: { size: 5 } // Randomly select 5 items
-  },
+[
+  {$addFields: {extendedValue: {$multiply: ["$unitPrice", "$quantity"]}}},
+  {$match: {extendedValue: {$gte: 5000}}},
+  {$sample: {size: 10}},
   {
     $project: {
       _id: 1,
-      name: 1,
-      price: 1,
-      sku: 1,
-      category: 1
+      itemId: 1,
+      unitPrice: 1,
+      quantity: 1,
+      category: 1,
+      supplier: 1,
+      extendedValue: 1
     }
-  }
-])
+  },
+  {$unset: "extendedValue"}
+]
